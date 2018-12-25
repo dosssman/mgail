@@ -1,12 +1,51 @@
 import tensorflow as tf
 import numpy as np
-import gym
-
+import gym, os
+from gym_torcs import TorcsEnv
 
 class Environment(object):
     def __init__(self, run_dir, env_name):
         self.name = env_name
-        self.gym = gym.make(self.name)
+        # self.gym = gym.make(self.name)
+        # XXX: Hook up Gym Torcs
+        vision = False
+        throttle = True
+        gear_change = False
+
+        # Agent only
+        # race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
+        #     "/raceconfig/agent_practice.xml"
+
+        # 2Damned_Agent_2Damned_1Fixed
+        # race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
+        #     "/raceconfig/2damned_agent_2damned_1fixed.xml"
+
+        # DamDamAgentFix
+        # race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
+        #     "/raceconfig/2damned_agent_1fixed_record.xml"
+
+        # Agent10Fixed_Track 2 Var 1
+        # race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
+        #     "/raceconfig/agent_10fixed_sparsed_track_2_var_1.xml"
+
+        # Agent10Fixed_Sparse
+        race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
+            "/raceconfig/agent_10fixed_sparsed_4.xml"
+
+        rendering = False
+        noisy = False
+
+        # TODO: How Restrict to 3 laps when evaling ?
+        lap_limiter = 3
+        timestep_limit = 320
+
+        # env = gym.make(args.env_id)
+        env = TorcsEnv(vision=vision, throttle=True, gear_change=False,
+    		race_config_path=race_config_path, rendering=rendering,
+    		lap_limiter = lap_limiter, noisy=noisy, timestep_limit=timestep_limit)
+        env.reset()
+
+        self.gym = env
         self.random_initialization = True
         self._connect()
         self._train_params()
@@ -63,18 +102,19 @@ class Environment(object):
         self.state_size = self.gym.observation_space.shape[0]
         self.action_size = self.gym.action_space.shape[0]
         self.action_space = np.asarray([None]*self.action_size)
-        self.qpos_size = self.gym.env.data.qpos.shape[0]
-        self.qvel_size = self.gym.env.data.qvel.shape[0]
+        # self.qpos_size = self.gym.env.data.qpos.shape[0]
+        # self.qvel_size = self.gym.env.data.qvel.shape[0]
 
     def _train_params(self):
         self.trained_model = None
         self.train_mode = True
-        self.expert_data = 'expert_trajectories/hopper_er.bin'
+        self.expert_data = '/home/z3r0/random/rl/mgail/expert_trajectories/hopper_er.bin'
+        self.expert_data_2 = '/home/z3r0/random/rl/openai_logs/openai-gailtorcs/data/Doss10FixedAnal_220eps/expert_data.npz'
         self.n_train_iters = 1000000
         self.n_episodes_test = 1
         self.test_interval = 1000
         self.n_steps_test = 1000
-        self.vis_flag = True
+        self.vis_flag = False
         self.save_models = True
         self.config_dir = None
         self.continuous_actions = True
@@ -106,6 +146,3 @@ class Environment(object):
         self.fm_lr = 1e-4
         self.d_lr = 1e-3
         self.p_lr = 1e-4
-
-
-

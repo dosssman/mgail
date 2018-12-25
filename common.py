@@ -1,19 +1,53 @@
-import cPickle
+# import pickle
+import _pickle as cPickle
 import tensorflow as tf
 import numpy as np
-
+import ER
 
 def save_params(fname, saver, session):
     saver.save(session, fname)
 
 
-def load_er(fname, batch_size, history_length, traj_length):
-    f = file(fname, 'rb')
-    er = cPickle.load(f)
+def load_er(fname, fname2, batch_size, history_length, traj_length):
+    f = open(fname, 'rb')
+    er = cPickle.load( f ,encoding='latin1')
+    # print( len(er.states[0]))
+    # print( len(er.actions[0]))
+    # print( len(er.rewards))
+    # print( len(er.qpos[0]))
+    # print( len(er.qvel[0]))
+
     er.batch_size = batch_size
-    er = set_er_stats(er, history_length, traj_length)
+
+    # input()
+    # print("Loading expert data %s" % fname2)
+    tmp = np.load(fname2)
+    er.history_length = history_length
+    er.states = tmp["obs"]
+    er.actions = tmp["acs"]
+    er.rewards = tmp["rews"]
+    er = set_er_stats_2(er, history_length, traj_length)
     return er
 
+
+def set_er_stats_2(er, history_length, traj_length):
+    state_dim = er.states.shape[-1]
+    action_dim = er.actions.shape[-1]
+    er.prestates = np.empty((er.batch_size, history_length, state_dim), dtype=np.float32)
+    er.poststates = np.empty((er.batch_size, history_length, state_dim), dtype=np.float32)
+    er.traj_states = np.empty((er.batch_size, traj_length, state_dim), dtype=np.float32)
+    er.traj_actions = np.empty((er.batch_size, traj_length-1, action_dim), dtype=np.float32)
+    er.states_min = np.min(er.states[:er.count], axis=0)
+    er.states_max = np.max(er.states[:er.count], axis=0)
+    er.actions_min = np.min(er.actions[:er.count], axis=0)
+    er.actions_max = np.max(er.actions[:er.count], axis=0)
+    er.states_mean = np.mean(er.states[:er.count], axis=0)
+    er.actions_mean = np.mean(er.actions[:er.count], axis=0)
+    er.states_std = np.std(er.states[:er.count], axis=0)
+    er.states_std[er.states_std == 0] = 1
+    er.actions_std = np.std(er.actions[:er.count], axis=0)
+
+    return er
 
 def set_er_stats(er, history_length, traj_length):
     state_dim = er.states.shape[-1]

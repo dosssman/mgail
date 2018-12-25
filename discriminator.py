@@ -20,6 +20,10 @@ class Discriminator(object):
     def forward(self, state, action, reuse=False):
 
         with tf.variable_scope('discriminator'):
+            print( "# Discriminator side debug")
+            print( state)
+            print( action)
+            print( "# Disc side debug end")
             concat = tf.concat(axis=1, values=[state, action])
             h0 = ops.dense(concat, self.arch_params['in_dim'], self.arch_params['n_hidden_0'], tf.nn.relu, 'dense0', reuse)
             h1 = ops.dense(h0, self.arch_params['n_hidden_0'], self.arch_params['n_hidden_1'], tf.nn.relu, 'dense1', reuse)

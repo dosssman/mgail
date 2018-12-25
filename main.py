@@ -3,7 +3,6 @@ import os
 from environment import Environment
 from driver import Driver
 
-
 def dispatcher(env):
 
     driver = Driver(env)
@@ -41,4 +40,9 @@ if __name__ == '__main__':
     env = Environment(os.path.curdir, 'Hopper-v1')
 
     # start training
-    dispatcher(env=env)
+    try:
+        dispatcher(env=env)
+    except Exception as e:
+        raise e
+    finally:
+        env.gym.close()

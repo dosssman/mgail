@@ -3,7 +3,7 @@ import tensorflow as tf
 
 import os
 import common
-from ER import ER
+from ER import ER_Torcs
 from forward_model import ForwardModel
 from discriminator import Discriminator
 from policy import Policy
@@ -46,22 +46,24 @@ class MGAIL(object):
                               weight_decay=self.env.weight_decay)
 
         # Create experience buffers
-        self.er_agent = ER(memory_size=self.env.er_agent_size,
+        self.er_agent = ER_Torcs(memory_size=self.env.er_agent_size,
                            state_dim=self.env.state_size,
                            action_dim=self.env.action_size,
                            reward_dim=1,  # stub connection
-                           qpos_dim=self.env.qpos_size,
-                           qvel_dim=self.env.qvel_size,
+                           # qpos_dim=self.env.qpos_size,
+                           # qvel_dim=self.env.qvel_size,
                            batch_size=self.env.batch_size,
                            history_length=1)
 
-        self.er_expert = common.load_er(fname=os.path.join(self.env.run_dir, self.env.expert_data),
+        self.er_expert = common.load_er(fname=self.env.expert_data,
+                                        fname2=self.env.expert_data_2,
                                         batch_size=self.env.batch_size,
-                                        history_length=1,
-                                        traj_length=2)
+                                        history_length=220,
+                                        traj_length=3600)
 
-        self.env.sigma = self.er_expert.actions_std / self.env.noise_intensity
-
+        # self.env.sigma = self.er_expert.actions_std / self.env.noise_intensity
+        self.env.sigma = self.er_expert.actions_std
+        # print( "Sigma: ", len(self.env.sigma)) # 3600
         # Normalize the inputs
         states_ = common.normalize(self.states_, self.er_expert.states_mean, self.er_expert.states_std)
         states = common.normalize(self.states, self.er_expert.states_mean, self.er_expert.states_std)
@@ -84,7 +86,7 @@ class MGAIL(object):
         correct_predictions = tf.equal(tf.argmax(d, 1), tf.argmax(labels, 1))
         self.discriminator.acc = tf.reduce_mean(tf.cast(correct_predictions, "float"))
         # 2.2 prediction
-        d_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=d, labels=labels)
+        d_cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=d, labels=labels)
         # cost sensitive weighting (weight true=expert, predict=agent mistakes)
         d_loss_weighted = self.env.cost_sensitive_weight * tf.multiply(tf.to_float(tf.equal(tf.squeeze(self.label), 1.)), d_cross_entropy) +\
                                                            tf.multiply(tf.to_float(tf.equal(tf.squeeze(self.label), 0.)), d_cross_entropy)
@@ -92,6 +94,7 @@ class MGAIL(object):
         self.discriminator.train(objective=discriminator_loss)
 
         # 3. Collect experience
+        print( "States:", states)
         mu = self.policy.forward(states)
         if self.env.continuous_actions:
             a = common.denormalize(mu, self.er_expert.actions_mean, self.er_expert.actions_std)
@@ -104,9 +107,8 @@ class MGAIL(object):
         # 4.3 AL
         def policy_loop(state_, t, total_cost, total_trans_err, _):
             mu = self.policy.forward(state_, reuse=True)
-
             if self.env.continuous_actions:
-                eta = self.env.sigma * tf.random_normal(shape=tf.shape(mu))
+                eta =  self.env.sigma * tf.random_normal(shape=tf.shape(mu))
                 action = mu + eta
             else:
                 action = common.gumbel_softmax_sample(logits=mu, temperature=self.temp)
@@ -152,7 +154,7 @@ class MGAIL(object):
 
         # Cross entropy loss
         labels = tf.concat([tf.zeros_like(logit_agent), tf.ones_like(logit_expert)], 1)
-        d_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=d, labels=labels)
+        d_cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=d, labels=labels)
         loss = tf.reduce_mean(d_cross_entropy)
 
         return loss*self.env.policy_al_w

@@ -73,11 +73,13 @@ class Driver(object):
 
         # reset the policy gradient
         self.sess.run([alg.policy.reset_grad_op], {})
-        # print( "### DEBUG: Policy reset successfully")
 
         # Adversarial Learning
         if self.env.get_status():
-            state = self.env.reset()
+            if self.itr % self.env.hard_reset_its == 0:
+                state = self.env.reset( relaunch=True)
+            else:
+                state = self.env.reset()
         else:
             state = self.env.get_state()
         # print( "### DEBUG: Policy status got success")
@@ -97,19 +99,24 @@ class Driver(object):
 
     def collect_experience(self, record=1, vis=0, n_steps=None, noise_flag=True, start_at_zero=True):
         alg = self.algorithm
-
         # environment initialization point
         # if start_at_zero:
         #     observation = self.env.reset()
         # else:
         #     qposs, qvels = alg.er_expert.sample()[5:]
         #     observation = self.env.reset(qpos=qposs[0], qvel=qvels[0])
+
+        # Params for reset gym torcs env
+        # collect_t_reset = self.env.hard_reset_its
+        # collect_t_reset = 500
+        # ENd Paras
+
         observation = self.env.reset()
 
         do_keep_prob = self.env.do_keep_prob
         t = 0
         R = 0
-        done = 0
+        done = False
         if n_steps is None:
             n_steps = self.env.n_steps_test
 
@@ -129,6 +136,7 @@ class Driver(object):
 
             done = done or t > n_steps
             t += 1
+            # collect_itr += 1
             R += reward
 
             if record:
@@ -141,6 +149,9 @@ class Driver(object):
                 #                  qposs=[qpos], qvels=[qvel])
                 alg.er_agent.add(actions=action, rewards=[reward], next_states=[observation], terminals=[done])
 
+            # if done:
+            #     print( "## DEBUG: collect_itr", collect_itr)
+
         return R
 
     def train_step(self):
@@ -151,12 +162,21 @@ class Driver(object):
 
         # Fill Experience Buffer
         if self.itr == 0:
+            collect_itr = 0
+            collect_t_reset = self.env.hard_reset_its
+            collect_t_reset = 500
+
             while self.algorithm.er_agent.current == self.algorithm.er_agent.count:
                 self.collect_experience()
+
+                if self.algorithm.er_agent.current / collect_t_reset > 1.0 and self.algorithm.er_agent.current % collect_t_reset < collect_t_reset:
+                    observation = self.env.reset( relaunch=True)
+                else:
+                    observation = self.env.reset()
+
                 buf = 'Collecting examples...%d/%d\n' % \
                       (self.algorithm.er_agent.current, self.algorithm.er_agent.states.shape[0])
                 sys.stdout.write('\r' + buf)
-            print( "### DEBUG: Sample collection ended @itr%d" % self.itr)
 
         # Adversarial Learning
         else:

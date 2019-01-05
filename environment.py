@@ -32,7 +32,7 @@ class Environment(object):
         race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
             "/raceconfig/agent_10fixed_sparsed_4.xml"
 
-        rendering = True
+        rendering = False
         noisy = False
 
         # TODO: How Restrict to 3 laps when evaling ?
@@ -124,7 +124,7 @@ class Environment(object):
         self.continuous_actions = True
 
         # Main parameters to play with:
-        self.er_agent_size = 1000
+        self.er_agent_size = 100000
         self.prep_time = 1000
         self.collect_experience_interval = 15
         self.n_steps_train = 10
@@ -140,6 +140,8 @@ class Environment(object):
         self.cost_sensitive_weight = 0.8
         self.noise_intensity = 1.
         self.do_keep_prob = 0.75
+        # Special Gym Torcs
+        self.hard_reset_its = 500
 
         # Hidden layers size
         self.fm_size = 100

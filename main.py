@@ -15,7 +15,7 @@ def dispatcher(env):
 
         # Test
         if driver.itr % env.test_interval == 0:
-            print( "### DEBUG: Testing at Iteration %d" % driver.itr) 
+            print( "### DEBUG: Testing at Iteration %d" % driver.itr)
             # measure performance
             R = []
             for n in range(env.n_episodes_test):
@@ -33,7 +33,6 @@ def dispatcher(env):
                 driver.save_model(dir_name=env.config_dir)
 
         driver.itr += 1
-
 
 if __name__ == '__main__':
     # load environment

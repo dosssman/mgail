@@ -163,14 +163,20 @@ class Driver(object):
         # Fill Experience Buffer
         if self.itr == 0:
             collect_itr = 0
+            collect_max = 0
             collect_t_reset = self.env.hard_reset_its
             collect_t_reset = 500
 
             while self.algorithm.er_agent.current == self.algorithm.er_agent.count:
                 self.collect_experience()
+                print( "### DEBUG: self.algorithm.er_agent.current", self.algorithm.er_agent.current)
+                print( "### DEBUG: self.algorithm.er_agent.current / collect_t_reset", self.algorithm.er_agent.current / collect_t_reset)
+                print( "### DEBUG: self.algorithm.er_agent.current % collect_t_reset < collect_t_reset", self.algorithm.er_agent.current % collect_t_reset < collect_t_reset)
+                print( "### DEBUG: Final Cond", self.algorithm.er_agent.current / collect_t_reset > 1.0 and self.algorithm.er_agent.current % collect_t_reset < collect_t_reset)
 
-                if self.algorithm.er_agent.current / collect_t_reset > 1.0 and self.algorithm.er_agent.current % collect_t_reset < collect_t_reset:
+                if self.algorithm.er_agent.current / collect_t_reset > 1.0 and int(self.algorithm.er_agent.current / collect_t_reset) > collect_max:
                     observation = self.env.reset( relaunch=True)
+                    collect_max = int(self.algorithm.er_agent.current / collect_t_reset)
                 else:
                     observation = self.env.reset()
 

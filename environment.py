@@ -32,30 +32,33 @@ class Environment(object):
         race_config_path = os.path.dirname(os.path.abspath(__file__)) + \
             "/raceconfig/agent_10fixed_sparsed_4.xml"
 
-        rendering = False
+        rendering = True
         noisy = False
 
         # TODO: How Restrict to 3 laps when evaling ?
         lap_limiter = 3
-        timestep_limit = 320
+        timestep_limit = -1
 
         # env = gym.make(args.env_id)
         env = TorcsEnv(vision=vision, throttle=True, gear_change=False,
     		race_config_path=race_config_path, rendering=rendering,
     		lap_limiter = lap_limiter, noisy=noisy, timestep_limit=timestep_limit)
+        # self.reset()
         env.reset()
 
         self.gym = env
-        self.random_initialization = True
+        self.random_initialization = False
         self._connect()
         self._train_params()
         self.run_dir = run_dir
+        self.t = 0
 
     def _step(self, action):
         action = np.squeeze(action)
         self.t += 1
         result = self.gym.step(action)
         self.state, self.reward, self.done, self.info = result[:4]
+
         if self.random_initialization:
             self.qpos, self.qvel = self.gym.env.model.data.qpos.flatten(), self.gym.env.model.data.qvel.flatten()
             return np.float32(self.state), np.float32(self.reward), self.done, np.float32(self.qpos), np.float32(self.qvel)
@@ -80,11 +83,12 @@ class Environment(object):
             else:
                 state, reward, done = self._step(action)
 
+        # print("### DEBUG: Done at step() @t=%d" % self.t, done)
         return state, reward, done, 0., qvel, qpos
 
-    def reset(self, qpos=None, qvel=None):
+    def reset(self, relaunch=False, qpos=None, qvel=None):
         self.t = 0
-        self.state = self.gym.reset()
+        self.state = self.gym.reset( relaunch=relaunch)
         if self.random_initialization and qpos is not None and qvel is not None:
             self.gym.env.set_state(qpos, qvel)
         return self.state
@@ -120,7 +124,7 @@ class Environment(object):
         self.continuous_actions = True
 
         # Main parameters to play with:
-        self.er_agent_size = 50000
+        self.er_agent_size = 1000
         self.prep_time = 1000
         self.collect_experience_interval = 15
         self.n_steps_train = 10
@@ -134,7 +138,7 @@ class Environment(object):
         self.total_trans_err_allowed = 1000
         self.temp = 1.
         self.cost_sensitive_weight = 0.8
-        self.noise_intensity = 6.
+        self.noise_intensity = 1.
         self.do_keep_prob = 0.75
 
         # Hidden layers size

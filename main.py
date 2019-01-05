@@ -15,7 +15,7 @@ def dispatcher(env):
 
         # Test
         if driver.itr % env.test_interval == 0:
-
+            print( "### DEBUG: Testing at Iteration %d" % driver.itr) 
             # measure performance
             R = []
             for n in range(env.n_episodes_test):

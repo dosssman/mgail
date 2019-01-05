@@ -3,6 +3,7 @@ import _pickle as cPickle
 import tensorflow as tf
 import numpy as np
 import ER
+from pprint import pprint
 
 def save_params(fname, saver, session):
     saver.save(session, fname)
@@ -11,7 +12,10 @@ def save_params(fname, saver, session):
 def load_er(fname, fname2, batch_size, history_length, traj_length):
     f = open(fname, 'rb')
     er = cPickle.load( f ,encoding='latin1')
-    # print( len(er.states[0]))
+    # print( "ER File structure")
+    # pprint(vars(er))
+    # print( len(er.states))
+    # print( er.states.shape)
     # print( len(er.actions[0]))
     # print( len(er.rewards))
     # print( len(er.qpos[0]))
@@ -23,9 +27,12 @@ def load_er(fname, fname2, batch_size, history_length, traj_length):
     # print("Loading expert data %s" % fname2)
     tmp = np.load(fname2)
     er.history_length = history_length
-    er.states = tmp["obs"]
-    er.actions = tmp["acs"]
-    er.rewards = tmp["rews"]
+    er.states = np.reshape( tmp["obs"], (220*3600, 65))
+    er.actions = np.reshape( tmp["acs"], (220*3600, 2))
+    er.rewards = np.reshape( tmp["rews"], (220*3600, 1))
+    er.action_dim = 2
+    er.state_dim = 65
+
     er = set_er_stats_2(er, history_length, traj_length)
     return er
 

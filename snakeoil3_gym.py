@@ -516,7 +516,7 @@ class DriverAction():
                     'gear':1,
                    'steer':0,
                    'focus':[-90,-45,0,45,90],
-                    'meta':0
+                    'meta': False
                     }
 
     def clip_to_limits(self):
@@ -533,8 +533,8 @@ class DriverAction():
         self.d['clutch']= clip(self.d['clutch'], 0, 1)
         if self.d['gear'] not in [-1, 0, 1, 2, 3, 4, 5, 6]:
             self.d['gear']= 0
-        if self.d['meta'] not in [0,1]:
-            self.d['meta']= 0
+        if self.d['meta'] not in [False,True]:
+            self.d['meta']= False
         if type(self.d['focus']) is not list or min(self.d['focus'])<-180 or max(self.d['focus'])>180:
             self.d['focus']= 0
 

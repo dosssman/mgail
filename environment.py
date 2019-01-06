@@ -122,11 +122,11 @@ class Environment(object):
         self.save_models = True
         self.config_dir = None
         self.continuous_actions = True
-        self.save_init_rb = True
-        self.load_saved_rb = None
+        self.save_init_rb = False
+        self.load_saved_rb = "rb/2019-01-06-14-35-size-100000"
 
         # Main parameters to play with:
-        self.er_agent_size = 100000
+        self.er_agent_size = 200
         self.prep_time = 1000
         self.collect_experience_interval = 15
         self.n_steps_train = 10

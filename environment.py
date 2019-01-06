@@ -122,6 +122,8 @@ class Environment(object):
         self.save_models = True
         self.config_dir = None
         self.continuous_actions = True
+        self.save_init_rb = True
+        self.load_saved_rb = None
 
         # Main parameters to play with:
         self.er_agent_size = 100000

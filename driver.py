@@ -3,6 +3,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import common
+import pickle as pkl
 from mgail import MGAIL
 
 
@@ -165,19 +166,31 @@ class Driver(object):
             collect_itr = 0
             collect_max = 0
             collect_t_reset = self.env.hard_reset_its
-            collect_t_reset = 500
 
-            while self.algorithm.er_agent.current == self.algorithm.er_agent.count:
-                self.collect_experience()
-                if self.algorithm.er_agent.current / collect_t_reset > 1.0 and int(self.algorithm.er_agent.current / collect_t_reset) > collect_max:
-                    observation = self.env.reset( relaunch=True)
-                    collect_max = int(self.algorithm.er_agent.current / collect_t_reset)
-                else:
-                    observation = self.env.reset()
+            if self.env.load_saved_rb is not None:
+                with open( self.env.load_saved_rb , "rb") as f:
+                    self.algorithm.er_agent = pkl.load(f)
+                print( "Loaded ER_Agent Replay Buffer from %s" % self.env.load_saved_rb )
+            else:
+                while self.algorithm.er_agent.current == self.algorithm.er_agent.count:
 
-                buf = 'Collecting examples...%d/%d\n' % \
-                      (self.algorithm.er_agent.current, self.algorithm.er_agent.states.shape[0])
-                sys.stdout.write('\r' + buf)
+                    self.collect_experience()
+
+                    if self.algorithm.er_agent.current / collect_t_reset > 1.0 and int(self.algorithm.er_agent.current / collect_t_reset) > collect_max:
+                        observation = self.env.reset( relaunch=True)
+                        collect_max = int(self.algorithm.er_agent.count / collect_t_reset)
+                    else:
+                        observation = self.env.reset()
+
+                    buf = 'Collecting examples...%d/%d\n' % \
+                          (self.algorithm.er_agent.current, self.algorithm.er_agent.states.shape[0])
+                    sys.stdout.write('\r' + buf)
+
+                if self.env.save_init_rb:
+                    fname = "rb/" + time.strftime("%Y-%m-%d-%H-%M-") + "size-%d" % self.env.er_agent_size
+                    print( "### DEBUG FName %s" %fname)
+                    with open( fname , "wb") as f:
+                        pkl.dump( self.algorithm.er_agent, f)
 
         # Adversarial Learning
         else:

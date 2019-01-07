@@ -34,8 +34,8 @@ class Driver(object):
         np.set_printoptions(linewidth=220)
 
         # TB Graph Dump
-        writer = tf.summary.FileWriter("tb/" + time.strftime("%Y-%m-%d-%H-%M-%S-Graph") )
-        writer.add_graph( self.sess.graph)
+        # writer = tf.summary.FileWriter("tb/" + time.strftime("%Y-%m-%d-%H-%M-%S-Graph") )
+        # writer.add_graph( self.sess.graph)
 
     def update_stats(self, module, attr, value):
         v = {'forward_model': 0, 'discriminator': 1, 'policy': 2}

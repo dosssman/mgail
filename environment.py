@@ -132,7 +132,7 @@ class Environment(object):
         self.n_steps_train = 10
         self.discr_policy_itrvl = 100
         self.gamma = 0.99
-        self.batch_size = 1024
+        self.batch_size = 396
         self.weight_decay = 1e-7
         self.policy_al_w = 1e-2
         self.policy_tr_w = 1e-4
